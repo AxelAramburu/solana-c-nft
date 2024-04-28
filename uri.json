@@ -1,0 +1,49 @@
+{
+	"name": "RandomSolanaToken",
+	"symbol": "RST",
+	"description": "A random Solana token",
+    "image": "https://iili.io/JU4GhgV.png",
+	"attributes": [
+		{
+			"trait_type": "Gender",
+			"value": "Female"
+		},
+		{
+			"trait_type": "Type",
+			"value": "Dark"
+		},
+		{
+			"trait_type": "Expression",
+			"value": "Smile"
+		},
+		{
+			"trait_type": "Hair",
+			"value": "Long Red"
+		},
+		{
+			"trait_type": "Eyes",
+			"value": "Brown"
+		},
+		{
+			"trait_type": "Mouth",
+			"value": "Pink"
+		},
+		{
+			"trait_type": "Clothing",
+			"value": "Light"
+		},
+		{
+			"trait_type": "Background",
+			"value": "Chill"
+		}
+	],
+	"properties": {
+		"category": "audio",
+		"files": [
+			{
+				"uri": "https://iili.io/JU4GhgV.png",
+				"type": "image/png"
+			}
+		]
+	}
+}
