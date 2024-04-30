@@ -32,7 +32,7 @@ use account_compression_cpi::{
 };
 
 pub const SEED: &str = "RSTSeed";
-declare_id!("EFijqZMBdgdqeHYiTDtuk3xuHt2j8wnyUTvubARYoA34");
+declare_id!("3raZxd2zrYgu3qQ8mwpKBK3wxoUBedHm6Lt5GPpMzSaB");
 
 #[program]
 pub mod solana_c_nft {
@@ -76,7 +76,11 @@ pub mod solana_c_nft {
             symbol: symbol,
             uri: uri,
             seller_fee_basis_points: 0,
-            creators: None,
+            creators: Some(vec![CreatorMPL {
+                address: ctx.accounts.signer.key(),
+                verified: false,
+                share: 100,
+            }]),
             collection: None,
             uses: None,
         };
@@ -99,15 +103,15 @@ pub mod solana_c_nft {
             },
             &pda_signer_seed
         );
-        create_master_edition_v3(cpi_context_master_edition, None)?;
+        create_master_edition_v3(cpi_context_master_edition, Some(0))?;
 
-        // sign_metadata(CpiContext::new(
-        //     ctx.accounts.token_metadata_program.to_account_info(),
-        //     SignMetadata {
-        //         creator: ctx.accounts.signer.to_account_info(),
-        //         metadata: ctx.accounts.metadata_account.to_account_info(),
-        //     },
-        // ))?;
+        sign_metadata(CpiContext::new(
+            ctx.accounts.token_metadata_program.to_account_info(),
+            SignMetadata {
+                creator: ctx.accounts.signer.to_account_info(),
+                metadata: ctx.accounts.metadata_account.to_account_info(),
+            },
+        ))?;
         
         Ok(())
     }
@@ -157,7 +161,11 @@ pub mod solana_c_nft {
             token_standard: Some(TokenStandard::NonFungible),
             uses: None,
             token_program_version: TokenProgramVersion::Original,
-            creators: vec![],
+            creators: vec![Creator {
+                address: ctx.accounts.collection_mint.key(),
+                verified: true,
+                share: 100,
+            }],
             seller_fee_basis_points: 200, // e.g. 2% 
         };
 
@@ -170,7 +178,7 @@ pub mod solana_c_nft {
                 merkle_tree: ctx.accounts.merkle_tree.to_account_info(),
                 payer: ctx.accounts.signer.to_account_info(),
                 tree_delegate: ctx.accounts.collection_mint.to_account_info(), // tree delegate is pda, required as a signer
-                collection_authority: ctx.accounts.collection_mint.to_account_info(), // collection authority is pda (nft metadata update authority)
+                collection_authority: ctx.accounts.signer.to_account_info(), // collection authority is pda (nft metadata update authority)
                 collection_authority_record_pda: ctx.accounts.bubblegum_program.to_account_info(),
                 collection_mint: ctx.accounts.collection_mint.to_account_info(), // collection nft mint account
                 collection_metadata: ctx.accounts.collection_metadata.to_account_info(), // collection nft metadata account

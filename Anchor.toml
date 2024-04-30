@@ -6,7 +6,7 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-solana_c_nft = "EFijqZMBdgdqeHYiTDtuk3xuHt2j8wnyUTvubARYoA34"
+solana_c_nft = "3raZxd2zrYgu3qQ8mwpKBK3wxoUBedHm6Lt5GPpMzSaB"
 
 [registry]
 url = "https://api.apr.dev"

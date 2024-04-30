@@ -1,33 +1,30 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
+import dotenv from "dotenv";
 import { SolanaCNft } from "../target/types/solana_c_nft";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
-import { MPL_TOKEN_METADATA_PROGRAM_ID, createNft, findMasterEditionPda, findMetadataPda, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
+import { findMasterEditionPda, findMetadataPda, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
-import { PublicKey, generateSigner, percentAmount, publicKey } from "@metaplex-foundation/umi";
+import { publicKey } from "@metaplex-foundation/umi";
 import { toWeb3JsKeypair, toWeb3JsPublicKey } from "@metaplex-foundation/umi-web3js-adapters";
 import { ValidDepthSizePair, createAllocTreeIx } from "@solana/spl-account-compression";
-
-import { fetchEstimatePriorityFees } from "../app/utils";
+import { checkTxStatus } from "../app/utils";
 
 describe("solana-c-nft", async () => {
-
-  const endpoint = "https://api.devnet.solana.com";
-  const umi = createUmi(endpoint);
+  dotenv.config();
+  const endpoint = process.env.RPC_URL;
+  const umi = createUmi(endpoint).use(mplTokenMetadata());
 
   const provider = anchor.AnchorProvider.env();
-  anchor.setProvider(provider);
-
+  anchor.setProvider(provider);  
+  
   const program = anchor.workspace.SolanaCNft as Program<SolanaCNft>;
   const seeds = [Buffer.from("RSTSeed")];
   console.log("Program: ", program.programId.toBase58());
   
   let signer = provider.wallet as anchor.Wallet;
   console.log("Signer: ", signer.publicKey.toBase58());
-  console.log("Signer.payer =", signer.payer.publicKey.toBase58());
-  
-  
+
   const [collectionPda] = anchor.web3.PublicKey.findProgramAddressSync(seeds, program.programId);
   console.log("Collection PDA: ", collectionPda.toBase58());
   // Get the associated token address(ATA)
@@ -38,7 +35,6 @@ describe("solana-c-nft", async () => {
   const bubblegumProgram = publicKey("BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY");
   const compressionProgram = publicKey("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK");
   const noopProgram = publicKey("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV");
-
   // Derive the metadata account
   let metadataAccount = await findMetadataPda(umi, {
     mint: publicKey(collectionPda),
@@ -63,10 +59,10 @@ describe("solana-c-nft", async () => {
   const metadata = {
 		name: "RandomSolanaToken",
 		symbol: "RST",
-		uri: "https://raw.githubusercontent.com/687c/solana-nft-native-client/main/metadata.json",
-	};
+    uri: "https://raw.githubusercontent.com/AxelAramburu/solana-c-nft/dev/uri.json"
+  };
 
-  it("Initialize!", async () => {
+  it("Initialize cNFT!", async () => {
     try {
       const initTx = await program.methods.initCnft(metadata.name, metadata.symbol, metadata.uri)
         .accounts({
@@ -88,12 +84,16 @@ describe("solana-c-nft", async () => {
         .signers([signer.payer])
         .rpc();
   
+      checkTxStatus(initTx);
       console.log("Init CNft Tx: ", initTx);
+
     } catch (error) {
       console.log(error);
     }
+  })
 
-
+  it("Initialize Tree", async () => {
+    // On your project, warning to specify theses parameters based on your needs
     const maxDepthSizePair: ValidDepthSizePair = {
       maxDepth: 14,
       maxBufferSize: 64,
@@ -139,11 +139,12 @@ describe("solana-c-nft", async () => {
       .signers([signer.payer])
       .rpc();
 
+      checkTxStatus(treeTx);
       console.log("Tree Tx: ", treeTx);
+
     } catch (error) {
       console.log(error);
     }
-    
   })
 
   it("Mint a cNft token !", async () => {
@@ -168,11 +169,11 @@ describe("solana-c-nft", async () => {
       .signers([signer.payer])
       .rpc();
   
+      checkTxStatus(mintTx);
       console.log("Mint tx: ", mintTx);
-      
+
     } catch (error) {
       console.log(error);
-      
     }
   })
 });

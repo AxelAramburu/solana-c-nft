@@ -1,39 +1,52 @@
-import { Transaction, ComputeBudgetProgram } from "@solana/web3.js";
-import { RequestPayload, ResponseData, EstimatePriorityFeesParams } from "./types";
+import dotenv from "dotenv";
+import { Connection } from "@solana/web3.js";
 
+//Utility function to check the status of a transaction, return bad execution if a transaction is dropped.
+export async function checkTxStatus(txId: string) {
+    dotenv.config();
 
-export async function fetchEstimatePriorityFees({
-    last_n_blocks,
-    account,
-    endpoint
-}: EstimatePriorityFeesParams): Promise<ResponseData> {
-    const params: any = {};
-    if (last_n_blocks !== undefined) {
-        params.last_n_blocks = last_n_blocks;
+    const SOLANA_RPC = new Connection(process.env.RPC_URL);
+    const start = new Date();
+
+    const blockhashResponse = await SOLANA_RPC.getLatestBlockhashAndContext('finalized');
+    const lastValidHeight = blockhashResponse.value.lastValidBlockHeight;
+    
+    let hashExpired = false;
+    let txStatus = false;
+    while (!txStatus) {
+        const { value: status } = await SOLANA_RPC.getSignatureStatus(txId);
+        if (status && ((status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized'))) {
+            txStatus = true;
+            const endTime = new Date();
+            const elapsed = (endTime.getTime() - start.getTime())/1000;
+            console.log(`Transaction Success. Elapsed time: ${elapsed} seconds.`);
+            console.log(`https://explorer.solana.com/tx/${txId}?cluster=devnet`);
+            break;
+        }
+
+        hashExpired = await isBlockhashExpired(SOLANA_RPC, lastValidHeight);
+
+        // Break loop if blockhash has expired
+        if (hashExpired) {
+            const endTime = new Date();
+            const elapsed = (endTime.getTime() - start.getTime())/1000;
+            console.log(`Blockhash has expired. Elapsed time: ${elapsed} seconds.`);
+            console.log(`Try to send a new transaction`);
+            break;
+        }
+        //Wait 1 second to re-check status
+        new Promise(resolve => setTimeout(resolve, 1000));
     }
-    if (account !== undefined) {
-        params.account = account;
-    }
+}
 
-    const payload: RequestPayload = {
-        method: 'qn_estimatePriorityFees',
-        params,
-        id: 1,
-        jsonrpc: '2.0',
-    };
+async function isBlockhashExpired(connection: Connection, lastValidBlockHeight: number) {
+    let currentBlockHeight = (await connection.getBlockHeight('finalized'));
+    console.log('                           ');
+    console.log('Current Block height:             ', currentBlockHeight);
+    console.log('Last Valid Block height - 150:     ', lastValidBlockHeight - 150);
+    console.log('--------------------------------------------');    
+    console.log('Difference:                      ',currentBlockHeight - (lastValidBlockHeight-150)); // If Difference is positive, blockhash has expired.
+    console.log('                           ');
 
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data: ResponseData = await response.json();
-    return data;
+    return (currentBlockHeight > lastValidBlockHeight - 150);
 }
