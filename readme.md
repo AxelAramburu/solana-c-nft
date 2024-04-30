@@ -5,12 +5,14 @@ That a project with tests example on how to mint a cNFT as part of a collection 
 It's a project example with program/accounts deployed on the Devnet
 
 Steps to reproduce: 
-1) Configure you're Solana Dev ecosystem, keypair, etc
-2) Add the variables on the `.env` file
-3) Install the dependencies with `npm i`
-4) Build the solana program (writed in Rust) with `anchor build`
-5) Deploy the program with: `anchor deploy`
-6) Run `anchor test` to execute
+1) Configure you're Solana Dev ecosystem, keypair, etc.
+2) Add the variables on the `.env` file.
+3) Install the dependencies with `npm i`.
+4) Build the solana program (writed in Rust) with `anchor build`.
+5) Deploy the program with: `anchor deploy`.
+6) Now take the deployed programID, and replace the `declare_id!(******)` field on the `programs/solana-c-nft/src/lib.rs` and the program address on `Anchor.toml` file by the program deployed.
+7) Re-run anchor build.
+8) Run `anchor test` to execute.
   
 Big shoutout to Discord Metaplex and Anchor community for good ressources 🤝
 
